@@ -1,6 +1,16 @@
 [package]
 name = "short-id"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+description = "Tiny crate for generating short, URL-safe, random or time-ordered IDs."
+license = "MIT"
+repository = "https://github.com/lioriz/short-id"
+homepage = "https://github.com/lioriz/short-id"
+documentation = "https://docs.rs/short-id"
+readme = "README.md"
+keywords = ["id", "short-id", "url-safe", "identifier"]
+categories = ["data-structures", "no-std"]
 
 [dependencies]
+rand = "0.8"
+base64 = "0.22"
