@@ -30,6 +30,7 @@ fn main() {
 - **Minimal API**: Just two functions, no configuration needed
 - **Secure**: Uses `OsRng` for cryptographically secure random bytes
 - **Time-ordered option**: Include timestamp prefix for temporal context
+- **`no_std` support**: Works in `no_std` environments with `alloc`
 
 ## Installation
 
@@ -53,6 +54,17 @@ Generates an ID with:
 - Next 6 bytes: random bytes
 
 The result is base64url-encoded (14 characters). Note that while the timestamp prefix provides temporal information, lexicographic sorting is not guaranteed due to base64url encoding characteristics.
+
+## `no_std` Support
+
+This crate supports `no_std` environments with `alloc`. To use in a `no_std` environment:
+
+```toml
+[dependencies]
+short-id = { version = "0.1", default-features = false }
+```
+
+**Note:** The `short_id_ordered()` function requires the `std` feature (enabled by default) as it depends on `std::time::SystemTime`. In `no_std` mode, only `short_id()` is available.
 
 ## License
 

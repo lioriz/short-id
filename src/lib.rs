@@ -1,24 +1,50 @@
 //! A tiny crate for generating short, URL-safe, random or time-ordered IDs.
 //!
-//! This crate provides two simple functions:
-//! - [`short_id()`] generates a random 10-byte ID
-//! - [`short_id_ordered()`] generates a time-ordered ID with a 4-byte timestamp prefix
+//! This crate provides functions for generating short IDs:
+//! - [`short_id()`] generates a random 10-byte ID (available in both `std` and `no_std`)
+//! - [`short_id_ordered()`] generates a time-ordered ID with a 4-byte timestamp prefix (requires `std` feature)
 //!
-//! Both functions return base64url-encoded strings that are safe to use in URLs.
+//! All functions return base64url-encoded strings that are safe to use in URLs.
+//!
+//! # `no_std` Support
+//!
+//! This crate supports `no_std` environments with `alloc`. Disable the default `std` feature:
+//!
+//! ```toml
+//! [dependencies]
+//! short-id = { version = "0.1", default-features = false }
+//! ```
+//!
+//! Note: [`short_id_ordered()`] requires the `std` feature as it depends on `std::time::SystemTime`.
 //!
 //! # Examples
 //!
 //! ```
-//! use short_id::{short_id, short_id_ordered};
+//! use short_id::short_id;
 //!
-//! // Generate a random ID
+//! // Generate a random ID (works in no_std + alloc)
 //! let id = short_id();
 //! println!("Random ID: {}", id);
+//! ```
 //!
-//! // Generate a time-ordered ID
+//! ```
+//! # #[cfg(feature = "std")]
+//! # {
+//! use short_id::short_id_ordered;
+//!
+//! // Generate a time-ordered ID (requires std feature)
 //! let ordered_id = short_id_ordered();
 //! println!("Time-ordered ID: {}", ordered_id);
+//! # }
 //! ```
+
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+
+#[cfg(not(feature = "std"))]
+use alloc::string::String;
 
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use rand::{rngs::OsRng, RngCore};
@@ -58,6 +84,8 @@ pub fn short_id() -> String {
 /// base64 value order). IDs generated seconds apart will typically differ in their
 /// first characters, but lexicographic ordering is not guaranteed.
 ///
+/// **This function requires the `std` feature** as it depends on `std::time::SystemTime`.
+///
 /// # Examples
 ///
 /// ```
@@ -70,6 +98,7 @@ pub fn short_id() -> String {
 /// // IDs will be different (timestamp + random)
 /// assert_ne!(id1, id2);
 /// ```
+#[cfg(feature = "std")]
 pub fn short_id_ordered() -> String {
     let timestamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -110,12 +139,14 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "std")]
     #[test]
     fn test_short_id_ordered_length() {
         let id = short_id_ordered();
         assert_eq!(id.len(), 14);
     }
 
+    #[cfg(feature = "std")]
     #[test]
     fn test_short_id_ordered_unique() {
         let id1 = short_id_ordered();
@@ -123,6 +154,7 @@ mod tests {
         assert_ne!(id1, id2);
     }
 
+    #[cfg(feature = "std")]
     #[test]
     fn test_short_id_ordered_chronological() {
         let id1 = short_id_ordered();
@@ -132,6 +164,7 @@ mod tests {
         assert!(id1 < id2, "id1: {}, id2: {}", id1, id2);
     }
 
+    #[cfg(feature = "std")]
     #[test]
     fn test_short_id_ordered_url_safe() {
         for _ in 0..100 {

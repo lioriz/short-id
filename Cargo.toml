@@ -12,5 +12,9 @@ keywords = ["id", "short-id", "url-safe", "identifier"]
 categories = ["data-structures", "no-std"]
 
 [dependencies]
-rand = "0.8"
-base64 = "0.22"
+rand = { version = "0.8", default-features = false, features = ["getrandom"] }
+base64 = { version = "0.22", default-features = false, features = ["alloc"] }
+
+[features]
+default = ["std"]
+std = ["rand/std"]

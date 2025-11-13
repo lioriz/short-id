@@ -1,4 +1,6 @@
-use short_id::{short_id, short_id_ordered};
+use short_id::short_id;
+#[cfg(feature = "std")]
+use short_id::short_id_ordered;
 
 #[test]
 fn test_short_id_returns_non_empty_string() {
@@ -19,6 +21,7 @@ fn test_short_id_returns_different_values() {
     );
 }
 
+#[cfg(feature = "std")]
 #[test]
 fn test_short_id_ordered_returns_different_values() {
     let id1 = short_id_ordered();
@@ -30,8 +33,7 @@ fn test_short_id_ordered_returns_different_values() {
 }
 
 #[test]
-fn test_both_functions_return_valid_base64_url_safe() {
-    // Test short_id()
+fn test_short_id_returns_valid_base64_url_safe() {
     let id = short_id();
     assert!(
         !id.contains('='),
@@ -39,8 +41,11 @@ fn test_both_functions_return_valid_base64_url_safe() {
     );
     assert!(!id.contains('+'), "short_id() should not contain '+'");
     assert!(!id.contains('/'), "short_id() should not contain '/'");
+}
 
-    // Test short_id_ordered()
+#[cfg(feature = "std")]
+#[test]
+fn test_short_id_ordered_returns_valid_base64_url_safe() {
     let ordered_id = short_id_ordered();
     assert!(
         !ordered_id.contains('='),
