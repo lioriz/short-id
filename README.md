@@ -3,16 +3,23 @@
 [![Crates.io](https://img.shields.io/crates/v/short-id.svg)](https://crates.io/crates/short-id)
 [![Documentation](https://docs.rs/short-id/badge.svg)](https://docs.rs/short-id)
 
-A tiny Rust library for generating short, URL-safe IDs.
+A tiny Rust library for generating short, URL-safe, unique identifiers.
 
-## Overview
+## What is this?
 
-`short-id` generates compact, URL-safe identifiers that are:
-- **Shorter than UUIDs**: 14 characters vs 36 for UUIDs
-- **URL-safe**: No special characters requiring encoding (`+`, `/`, `=`)
-- **Cryptographically secure**: Uses `OsRng` for random bytes
-- **Minimal**: Just two functions, no configuration needed
-- **`no_std` compatible**: Works in embedded environments with `alloc`
+Unlike full UUIDs (which are 36 characters and include hyphens), `short-id` gives you compact 14-character strings that are easy to copy, paste, and use in URLs.
+
+This library has two main goals:
+
+1. **Make it very easy to generate short random IDs** for things like request IDs, user-facing tokens, test data, and log correlation.
+
+2. **Provide an optional "ordered" variant** where IDs include a timestamp prefix, so when you sort them as strings they roughly follow creation time.
+
+It is intentionally minimal - no configuration, no custom alphabets, no complex API. You just call:
+- `short_id()` for a random URL-safe ID
+- `short_id_ordered()` for a URL-safe ID that is roughly time-ordered
+
+This crate is for you if you want something simpler and shorter than UUIDs, and you don't need strict UUID semantics or reversibility.
 
 ## Quick Start
 
@@ -21,14 +28,8 @@ use short_id::short_id;
 
 // Generate a random ID
 let id = short_id();
-println!("Generated ID: {}", id);
+println!("Request ID: {}", id);
 // Example output: "X7K9mP2nQwE-Tg"
-
-// IDs are always 14 characters long
-assert_eq!(id.len(), 14);
-
-// IDs are URL-safe (no special characters)
-assert!(!id.contains('+') && !id.contains('/') && !id.contains('='));
 ```
 
 ## Installation
@@ -44,31 +45,38 @@ short-id = "0.1"
 
 ### Random IDs
 
+Perfect for request IDs, session tokens, or any unique identifier:
+
 ```rust
 use short_id::short_id;
 
-let id = short_id();
-println!("Random ID: {}", id);
-// Example: "X7K9mP2nQwE-Tg"
+let request_id = short_id();
+let session_id = short_id();
+let token = short_id();
+
+// Each ID is 14 characters, URL-safe, and unique
+assert_eq!(request_id.len(), 14);
 ```
 
 ### Time-Ordered IDs
 
-For IDs that include temporal information:
+For IDs that roughly sort by creation time:
 
 ```rust
 use short_id::short_id_ordered;
 
-let id = short_id_ordered();
-println!("Time-ordered ID: {}", id);
-// Example: "aRZdyB6nsOeBDw"
-
-// IDs generated at different times will differ
 let id1 = short_id_ordered();
 std::thread::sleep(std::time::Duration::from_secs(1));
 let id2 = short_id_ordered();
-assert_ne!(id1, id2);
+
+// IDs sort chronologically
+assert!(id1 < id2);
 ```
+
+This is useful for:
+- Log entries that should sort by time
+- Event IDs in chronological order  
+- Resource IDs where temporal order matters
 
 ## API
 
@@ -76,40 +84,29 @@ assert_ne!(id1, id2);
 
 Generates a random 10-byte ID encoded with base64url (14 characters).
 
-- **Length**: Always 14 characters
-- **Characters**: `A-Z`, `a-z`, `0-9`, `-`, `_` (URL-safe)
-- **Uniqueness**: Cryptographically random, collision probability is negligible
-- **Availability**: Works in both `std` and `no_std` (with `alloc`) environments
+- Always exactly 14 characters
+- URL-safe characters only: `A-Z`, `a-z`, `0-9`, `-`, `_`
+- Cryptographically secure random
+- Works in both `std` and `no_std` (with `alloc`)
 
 ### `short_id_ordered()`
 
-Generates an ID with:
-- First 4 bytes: Unix timestamp (u32, big-endian)
-- Next 6 bytes: random bytes
+Generates an ID with a timestamp prefix (4 bytes) plus random bytes (6 bytes), base64url-encoded to 14 characters.
 
-The result is base64url-encoded (14 characters).
-
-- **Availability**: Requires the `std` feature (enabled by default)
-- **Uniqueness**: Timestamp + random bytes ensure uniqueness even within the same second
-- **Ordering caveat**: While IDs include temporal information, lexicographic sorting is not guaranteed due to base64url encoding characteristics
+- Includes Unix timestamp, so IDs roughly sort by creation time
+- Still cryptographically unique due to random component
+- Requires the `std` feature (enabled by default)
 
 ## `no_std` Support
 
-This crate supports `no_std` environments with `alloc`. To use in a `no_std` environment:
+This crate works in `no_std` environments with `alloc`:
 
 ```toml
 [dependencies]
 short-id = { version = "0.1", default-features = false }
 ```
 
-**Note:** The `short_id_ordered()` function requires the `std` feature (enabled by default) as it depends on `std::time::SystemTime`. In `no_std` mode, only `short_id()` is available.
-
-## Implementation Details
-
-- Random IDs use 10 cryptographically secure random bytes from `OsRng`
-- Time-ordered IDs use 4 bytes for Unix timestamp + 6 random bytes
-- All IDs are encoded with base64url (URL_SAFE_NO_PAD)
-- Result is always exactly 14 characters (no padding)
+**Note:** In `no_std` mode, only `short_id()` is available. The `short_id_ordered()` function requires the `std` feature because it needs `std::time::SystemTime`.
 
 ## License
 
