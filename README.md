@@ -108,6 +108,31 @@ short-id = { version = "0.1", default-features = false }
 
 **Note:** In `no_std` mode, only `short_id()` is available. The `short_id_ordered()` function requires the `std` feature because it needs `std::time::SystemTime`.
 
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+### For Maintainers
+
+Releases are automated via GitHub Actions. See [RELEASE.md](RELEASE.md) for full details.
+
+**Quick release:**
+```bash
+# Update Cargo.toml and CHANGELOG.md
+git add Cargo.toml CHANGELOG.md
+git commit -m "Release v0.1.1"
+git push origin main
+
+# Tag triggers automatic publish to crates.io
+git tag v0.1.1
+git push origin v0.1.1
+```
+
+Or use the release script:
+```bash
+./scripts/release.sh 0.1.1
+```
+
 ## License
 
 MIT

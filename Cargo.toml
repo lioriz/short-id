@@ -10,6 +10,12 @@ documentation = "https://docs.rs/short-id"
 readme = "README.md"
 keywords = ["id", "short-id", "url-safe", "identifier"]
 categories = ["data-structures", "no-std"]
+exclude = [
+    ".github/",
+    "scripts/",
+    "RELEASE.md",
+    "CONTRIBUTING.md",
+]
 
 [dependencies]
 rand = { version = "0.8", default-features = false, features = ["getrandom"] }
