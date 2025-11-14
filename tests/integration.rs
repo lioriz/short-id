@@ -25,7 +25,7 @@ fn test_short_id_returns_different_values() {
 fn test_many_short_ids_are_unique() {
     // Generate 100 IDs in rapid succession
     let ids: Vec<String> = (0..100).map(|_| short_id()).collect();
-    
+
     // All should be unique
     for i in 0..ids.len() {
         for j in i + 1..ids.len() {
@@ -77,4 +77,3 @@ fn test_short_id_ordered_returns_valid_base64_url_safe() {
         "short_id_ordered() should not contain '/'"
     );
 }
-
