@@ -139,12 +139,13 @@ pub fn short_id() -> String {
 
 /// Generates a time-ordered, URL-safe short ID.
 ///
-/// Creates a 14-character ID that includes the current Unix timestamp, making IDs
-/// roughly sortable by creation time. The ID consists of:
-/// - First 4 bytes: Unix timestamp (seconds) as big-endian u32
-/// - Next 6 bytes: Cryptographically secure random bytes
+/// Creates a 14-character ID with microsecond-precision timestamp for excellent time
+/// resolution when generating IDs in rapid succession. The ID consists of:
+/// - First 8 bytes: Unix timestamp (microseconds since epoch) as big-endian u64
+/// - Next 2 bytes: Cryptographically secure random bytes
 ///
-/// When you sort these IDs as strings, they will roughly follow creation time order.
+/// With microsecond precision, IDs created within the same microsecond will differ
+/// by their random component (65,536 possible values per microsecond).
 ///
 /// **This function requires the `std` feature** (enabled by default).
 ///
@@ -211,14 +212,14 @@ pub fn short_id() -> String {
 /// ```
 #[cfg(feature = "std")]
 pub fn short_id_ordered() -> String {
-    let timestamp = std::time::SystemTime::now()
+    let timestamp_us = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .expect("system time before Unix epoch")
-        .as_secs() as u32;
+        .as_micros() as u64;
 
     let mut bytes = [0u8; 10];
-    bytes[0..4].copy_from_slice(&timestamp.to_be_bytes());
-    OsRng.fill_bytes(&mut bytes[4..10]);
+    bytes[0..8].copy_from_slice(&timestamp_us.to_be_bytes());
+    OsRng.fill_bytes(&mut bytes[8..10]);
 
     URL_SAFE_NO_PAD.encode(bytes)
 }

@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0] - 2025-11-13
+## [0.2.0]
+
+### Changed
+- **BREAKING**: `short_id_ordered()` now uses **microseconds** (8 bytes) instead of seconds (4 bytes) for the timestamp
+  - Provides excellent time resolution (1,000,000 steps per second) for high-frequency ID generation
+  - Timestamp: 8 bytes microseconds (was 4 bytes seconds), Random: 2 bytes (was 6 bytes)
+  - Still 10 bytes total, still 14 characters after encoding
+  - IDs created within the same **microsecond** differ by their random component (65,536 variations)
+  - Range: ~584,542 years from Unix epoch (plenty for any application)
+
+## [0.1.0]
 
 ### Added
 - Initial release of `short-id` crate
@@ -41,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MIT License
 - Professional README with usage examples
 
-[Unreleased]: https://github.com/lioriz/short-id/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/lioriz/short-id/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/lioriz/short-id/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/lioriz/short-id/releases/tag/v0.1.0
 

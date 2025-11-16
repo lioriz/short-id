@@ -91,10 +91,11 @@ Generates a random 10-byte ID encoded with base64url (14 characters).
 
 ### `short_id_ordered()`
 
-Generates an ID with a timestamp prefix (4 bytes) plus random bytes (6 bytes), base64url-encoded to 14 characters.
+Generates an ID with microsecond-precision timestamp (8 bytes) plus random bytes (2 bytes), base64url-encoded to 14 characters.
 
-- Includes Unix timestamp, so IDs roughly sort by creation time
-- Still cryptographically unique due to random component
+- Includes Unix timestamp in **microseconds** for excellent time resolution
+- 65,536 possible values per **microsecond** (random component)
+- Ideal for high-frequency ID generation with temporal information
 - Requires the `std` feature (enabled by default)
 
 ## `no_std` Support
