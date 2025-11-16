@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.2.2]
+## [0.2.3]
 
 ### Changed
 - **BREAKING**: `short_id_ordered()` now uses **microseconds** (8 bytes) instead of seconds (4 bytes) for the timestamp
@@ -51,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MIT License
 - Professional README with usage examples
 
-[Unreleased]: https://github.com/lioriz/short-id/compare/v0.2.2...HEAD
-[0.2.2]: https://github.com/lioriz/short-id/compare/v0.1.0...v0.2.2
+[Unreleased]: https://github.com/lioriz/short-id/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/lioriz/short-id/compare/v0.1.0...v0.2.3
 [0.1.0]: https://github.com/lioriz/short-id/releases/tag/v0.1.0
 

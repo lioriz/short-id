@@ -38,7 +38,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-short-id = "0.1"
+short-id = "0.2"
 ```
 
 ## Usage
@@ -104,7 +104,7 @@ This crate works in `no_std` environments with `alloc`:
 
 ```toml
 [dependencies]
-short-id = { version = "0.1", default-features = false }
+short-id = { version = "0.2", default-features = false }
 ```
 
 **Note:** In `no_std` mode, only `short_id()` is available. The `short_id_ordered()` function requires the `std` feature because it needs `std::time::SystemTime`.
