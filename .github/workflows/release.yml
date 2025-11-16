@@ -17,6 +17,8 @@ jobs:
     environment:
       name: production
       url: https://crates.io/crates/short-id
+    permissions:
+      contents: write  # Required to create GitHub releases
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
