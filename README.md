@@ -78,25 +78,51 @@ This is useful for:
 - Event IDs in chronological order  
 - Resource IDs where temporal order matters
 
-## API
+### Convenience Macros
 
-### `short_id()`
+```rust
+use short_id::{id, ordered_id};
 
-Generates a random 10-byte ID encoded with base64url (14 characters).
+let random = id!();          // Same as short_id()
+let ordered = ordered_id!(); // Same as short_id_ordered()
+```
 
-- Always exactly 14 characters
-- URL-safe characters only: `A-Z`, `a-z`, `0-9`, `-`, `_`
-- Cryptographically secure random
-- Works in both `std` and `no_std` (with `alloc`)
+### Typed Wrapper
 
-### `short_id_ordered()`
+```rust
+use short_id::ShortId;
 
-Generates an ID with microsecond-precision timestamp (8 bytes) plus random bytes (2 bytes), base64url-encoded to 14 characters.
+let id = ShortId::random();   // Returns ShortId newtype
+let id = ShortId::ordered();  // Time-ordered variant
 
-- Includes Unix timestamp in **microseconds** for excellent time resolution
-- 65,536 possible values per **microsecond** (random component)
-- Ideal for high-frequency ID generation with temporal information
-- Requires the `std` feature (enabled by default)
+// Convert to/from String
+let s: String = id.into();
+let id: ShortId = s.into();
+```
+
+## API Reference
+
+**Functions:**
+- `short_id() -> String` - Generate a random ID
+- `short_id_ordered() -> String` - Generate a time-ordered ID (requires `std`)
+
+**Macros:**
+- `id!()` - Shorthand for `short_id()`
+- `ordered_id!()` - Shorthand for `short_id_ordered()`
+
+**Type:**
+- `ShortId` - Newtype wrapper with methods:
+  - `ShortId::random() -> Self`
+  - `ShortId::ordered() -> Self` (requires `std`)
+  - `as_str(&self) -> &str`
+  - `into_string(self) -> String`
+  - Implements: `Display`, `AsRef<str>`, `From<String>`, `From<ShortId> for String`
+
+All IDs are:
+- Exactly 14 characters
+- URL-safe: `A-Z`, `a-z`, `0-9`, `-`, `_`
+- Cryptographically secure (using `OsRng`)
+- Base64url encoded (no padding)
 
 ## `no_std` Support
 
