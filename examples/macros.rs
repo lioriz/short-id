@@ -12,4 +12,3 @@ fn main() {
     assert_eq!(random.len(), 14);
     assert_eq!(ordered.len(), 14);
 }
-

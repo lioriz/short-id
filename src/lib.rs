@@ -352,3 +352,114 @@ mod tests {
         }
     }
 }
+
+/// A newtype wrapper around a short ID string.
+///
+/// Provides a typed interface for working with short IDs, with methods for
+/// generation and conversion. The inner string is always a valid 14-character
+/// URL-safe identifier.
+///
+/// # Examples
+///
+/// ```
+/// use short_id::ShortId;
+///
+/// // Generate a random ID
+/// let id = ShortId::random();
+/// assert_eq!(id.as_str().len(), 14);
+///
+/// // Convert to string
+/// let s: String = id.into_string();
+/// ```
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+pub struct ShortId(String);
+
+impl ShortId {
+    /// Creates a new random short ID.
+    ///
+    /// This is equivalent to calling [`short_id()`] but returns a typed [`ShortId`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use short_id::ShortId;
+    ///
+    /// let id = ShortId::random();
+    /// assert_eq!(id.as_str().len(), 14);
+    /// ```
+    pub fn random() -> Self {
+        ShortId(short_id())
+    }
+
+    /// Creates a new time-ordered short ID.
+    ///
+    /// This is equivalent to calling [`short_id_ordered()`] but returns a typed [`ShortId`].
+    /// Requires the `std` feature (enabled by default).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use short_id::ShortId;
+    ///
+    /// let id = ShortId::ordered();
+    /// assert_eq!(id.as_str().len(), 14);
+    /// ```
+    #[cfg(feature = "std")]
+    pub fn ordered() -> Self {
+        ShortId(short_id_ordered())
+    }
+
+    /// Returns the ID as a string slice.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use short_id::ShortId;
+    ///
+    /// let id = ShortId::random();
+    /// let s: &str = id.as_str();
+    /// assert_eq!(s.len(), 14);
+    /// ```
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+
+    /// Consumes the `ShortId` and returns the inner `String`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use short_id::ShortId;
+    ///
+    /// let id = ShortId::random();
+    /// let s: String = id.into_string();
+    /// assert_eq!(s.len(), 14);
+    /// ```
+    pub fn into_string(self) -> String {
+        self.0
+    }
+}
+
+impl core::fmt::Display for ShortId {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl AsRef<str> for ShortId {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl From<String> for ShortId {
+    fn from(s: String) -> Self {
+        ShortId(s)
+    }
+}
+
+impl From<ShortId> for String {
+    fn from(id: ShortId) -> Self {
+        id.0
+    }
+}
