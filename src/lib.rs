@@ -76,6 +76,46 @@ use alloc::string::String;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use rand::{rngs::OsRng, RngCore};
 
+/// Convenience macro for generating a random short ID.
+///
+/// This macro simply calls [`short_id()`] and is provided for ergonomics.
+///
+/// # Examples
+///
+/// ```
+/// use short_id::id;
+///
+/// let request_id = id!();
+/// assert_eq!(request_id.len(), 14);
+/// ```
+#[macro_export]
+macro_rules! id {
+    () => {
+        $crate::short_id()
+    };
+}
+
+/// Convenience macro for generating a time-ordered short ID.
+///
+/// This macro simply calls [`short_id_ordered()`] and is provided for ergonomics.
+/// Requires the `std` feature (enabled by default).
+///
+/// # Examples
+///
+/// ```
+/// use short_id::ordered_id;
+///
+/// let log_id = ordered_id!();
+/// assert_eq!(log_id.len(), 14);
+/// ```
+#[cfg(feature = "std")]
+#[macro_export]
+macro_rules! ordered_id {
+    () => {
+        $crate::short_id_ordered()
+    };
+}
+
 /// Generates a random, URL-safe short ID.
 ///
 /// Creates a 14-character ID from 10 cryptographically secure random bytes,
