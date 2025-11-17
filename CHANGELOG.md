@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0]
+
+### Added
+- **Convenience macros** for ergonomic ID generation:
+  - `id!()` - Shorthand for `short_id()`
+  - `ordered_id!()` - Shorthand for `short_id_ordered()`
+- **`ShortId` newtype wrapper** for typed ID handling:
+  - `ShortId::random()` - Creates a random ID
+  - `ShortId::ordered()` - Creates a time-ordered ID
+  - `as_str(&self) -> &str` - Returns string slice
+  - `into_string(self) -> String` - Consumes and returns inner String
+  - Implements: `Clone`, `Eq`, `PartialEq`, `Ord`, `PartialOrd`, `Hash`, `Debug`, `Display`, `AsRef<str>`
+  - `From<String>` and `From<ShortId> for String` conversions
+- Enhanced examples demonstrating all API variants
+- Comprehensive integration tests for new features
+
+### Changed
+- Updated `examples/basic.rs` to showcase functions, macros, and typed wrapper
+- Expanded documentation with examples for all API variants
+
 ## [0.2.3]
 
 ### Changed
@@ -51,7 +71,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MIT License
 - Professional README with usage examples
 
-[Unreleased]: https://github.com/lioriz/short-id/compare/v0.2.3...HEAD
-[0.2.3]: https://github.com/lioriz/short-id/compare/v0.1.0...v0.2.3
+[Unreleased]: https://github.com/lioriz/short-id/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/lioriz/short-id/compare/v0.2.3...v0.3.0
+[0.2.0]: https://github.com/lioriz/short-id/compare/v0.1.0...v0.2.3
 [0.1.0]: https://github.com/lioriz/short-id/releases/tag/v0.1.0
 

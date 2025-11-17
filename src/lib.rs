@@ -60,7 +60,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! short-id = { version = "0.1", default-features = false }
+//! short-id = { version = "0.3", default-features = false }
 //! ```
 //!
 //! In `no_std` mode, only [`short_id()`] is available.

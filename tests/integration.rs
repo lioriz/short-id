@@ -107,7 +107,11 @@ fn test_ordered_id_macro_returns_non_empty() {
 #[test]
 fn test_short_id_random_returns_non_empty() {
     let id = ShortId::random();
-    assert_eq!(id.as_str().len(), 14, "ShortId::random() should be 14 chars");
+    assert_eq!(
+        id.as_str().len(),
+        14,
+        "ShortId::random() should be 14 chars"
+    );
 }
 
 #[test]
