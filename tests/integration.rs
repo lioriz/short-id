@@ -133,7 +133,7 @@ fn test_short_id_ordered_returns_non_empty() {
 #[test]
 fn test_short_id_display() {
     let id = ShortId::random();
-    let displayed = format!("{}", id);
+    let displayed = format!("{id}");
     assert_eq!(displayed, id.as_str(), "Display should match as_str()");
 }
 
