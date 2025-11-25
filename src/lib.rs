@@ -94,7 +94,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! short-id = { version = "0.3", default-features = false }
+//! short-id = { version = "0.4", default-features = false }
 //! ```
 //!
 //! In `no_std` mode, only [`short_id()`] and [`short_id_with_bytes()`] are available.
