@@ -1,6 +1,6 @@
 [package]
 name = "short-id"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 description = "Tiny crate for generating short, URL-safe, random or time-ordered IDs."
 license = "MIT"
