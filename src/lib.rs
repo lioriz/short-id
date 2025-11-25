@@ -47,14 +47,48 @@
 //!
 //! # Characteristics
 //!
-//! - **Length**: Always exactly 14 characters
+//! - **Length**: Always exactly 14 characters (default)
 //! - **URL-safe**: Only `A-Z`, `a-z`, `0-9`, `-`, `_` (no special characters)
 //! - **Cryptographically secure**: Uses `OsRng` for random bytes
 //! - **No configuration needed**: Just call the function
 //!
+//! # Advanced: Custom Length IDs
+//!
+//! For advanced use cases, you can control the ID length by specifying the number of random bytes:
+//!
+//! ```
+//! use short_id::{short_id_with_bytes, short_id_ordered_with_bytes};
+//!
+//! // Generate a shorter 8-character ID (6 bytes)
+//! let short = short_id_with_bytes(6);
+//! assert_eq!(short.len(), 8);
+//!
+//! // Generate a longer 22-character ID (16 bytes)
+//! let long = short_id_with_bytes(16);
+//! assert_eq!(long.len(), 22);
+//!
+//! // Time-ordered IDs also support custom lengths
+//! let ordered = short_id_ordered_with_bytes(12);
+//! ```
+//!
+//! **When to use custom lengths:**
+//!
+//! - **Fewer bytes (e.g., 4-6)**: Use for low-volume applications where you need very short IDs
+//!   and collision risk is acceptable. Keep in mind that 6 bytes provides only ~48 bits of entropy.
+//!
+//! - **Default (10 bytes)**: Recommended for most applications. Provides ~80 bits of entropy
+//!   with 14-character IDs. The [`short_id()`] and [`short_id_ordered()`] functions use this.
+//!
+//! - **More bytes (e.g., 16-32)**: Use for high-volume applications or when you need extra
+//!   safety margin. 16 bytes provides ~128 bits of entropy.
+//!
+//! **Important:** Using fewer bytes significantly increases collision probability. For most users,
+//! the default [`short_id()`] and [`short_id_ordered()`] functions are recommended.
+//!
 //! # Features
 //!
-//! - **`std`** (enabled by default): Enables [`short_id_ordered()`] which needs `std::time::SystemTime`
+//! - **`std`** (enabled by default): Enables [`short_id_ordered()`] and [`short_id_ordered_with_bytes()`]
+//!   which need `std::time::SystemTime`
 //!
 //! For `no_std` environments with `alloc`:
 //!
@@ -63,7 +97,7 @@
 //! short-id = { version = "0.3", default-features = false }
 //! ```
 //!
-//! In `no_std` mode, only [`short_id()`] is available.
+//! In `no_std` mode, only [`short_id()`] and [`short_id_with_bytes()`] are available.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -73,8 +107,19 @@ extern crate alloc;
 #[cfg(not(feature = "std"))]
 use alloc::string::String;
 
+#[cfg(not(feature = "std"))]
+use alloc::vec;
+
+#[cfg(feature = "std")]
+use std::vec;
+
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use rand::{rngs::OsRng, RngCore};
+
+/// Maximum number of random bytes allowed for custom-length ID generation.
+///
+/// This limit prevents excessive memory allocation and ensures reasonable ID sizes.
+const MAX_BYTES: usize = 32;
 
 /// Convenience macro for generating a random short ID.
 ///
@@ -114,6 +159,25 @@ macro_rules! ordered_id {
     () => {
         $crate::short_id_ordered()
     };
+}
+
+/// Internal helper: generates a random ID with the specified number of bytes.
+///
+/// # Panics
+///
+/// Panics if `num_bytes` is 0 or exceeds `MAX_BYTES`.
+fn generate_random_id(num_bytes: usize) -> String {
+    assert!(num_bytes > 0, "num_bytes must be greater than 0");
+    assert!(
+        num_bytes <= MAX_BYTES,
+        "num_bytes must not exceed {} (got {})",
+        MAX_BYTES,
+        num_bytes
+    );
+
+    let mut bytes = vec![0u8; num_bytes];
+    OsRng.fill_bytes(&mut bytes);
+    URL_SAFE_NO_PAD.encode(&bytes)
 }
 
 /// Generates a random, URL-safe short ID.
@@ -172,9 +236,36 @@ macro_rules! ordered_id {
 /// // No encoding needed - safe to use directly
 /// ```
 pub fn short_id() -> String {
-    let mut bytes = [0u8; 10];
-    OsRng.fill_bytes(&mut bytes);
-    URL_SAFE_NO_PAD.encode(bytes)
+    generate_random_id(10)
+}
+
+/// Internal helper: generates a time-ordered ID with the specified number of bytes.
+///
+/// Uses 8 bytes for timestamp and fills the remaining bytes with random data.
+///
+/// # Panics
+///
+/// Panics if `num_bytes` is less than 8, is 0, or exceeds `MAX_BYTES`.
+#[cfg(feature = "std")]
+fn generate_ordered_id(num_bytes: usize) -> String {
+    assert!(num_bytes >= 8, "num_bytes must be at least 8 for ordered IDs (got {})", num_bytes);
+    assert!(
+        num_bytes <= MAX_BYTES,
+        "num_bytes must not exceed {} (got {})",
+        MAX_BYTES,
+        num_bytes
+    );
+
+    let timestamp_us = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .expect("system time before Unix epoch")
+        .as_micros() as u64;
+
+    let mut bytes = vec![0u8; num_bytes];
+    bytes[0..8].copy_from_slice(&timestamp_us.to_be_bytes());
+    OsRng.fill_bytes(&mut bytes[8..]);
+
+    URL_SAFE_NO_PAD.encode(&bytes)
 }
 
 /// Generates a time-ordered, URL-safe short ID.
@@ -252,16 +343,151 @@ pub fn short_id() -> String {
 /// ```
 #[cfg(feature = "std")]
 pub fn short_id_ordered() -> String {
-    let timestamp_us = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .expect("system time before Unix epoch")
-        .as_micros() as u64;
+    generate_ordered_id(10)
+}
 
-    let mut bytes = [0u8; 10];
-    bytes[0..8].copy_from_slice(&timestamp_us.to_be_bytes());
-    OsRng.fill_bytes(&mut bytes[8..10]);
+/// **Advanced:** Generates a random, URL-safe short ID with a custom number of bytes.
+///
+/// This is an advanced API that allows you to control the ID length by specifying
+/// the number of random bytes to use. The ID is encoded using URL-safe base64 without
+/// padding, so the resulting string length will be approximately `(num_bytes * 4) / 3`.
+///
+/// **For most users, [`short_id()`] is the recommended API.**
+///
+/// # Parameters
+///
+/// - `num_bytes`: Number of random bytes to generate (1 to 32 inclusive)
+///
+/// # Panics
+///
+/// Panics if `num_bytes` is 0 or exceeds 32.
+///
+/// # Security Note
+///
+/// **Using fewer bytes reduces entropy and increases collision probability.**
+/// - 10 bytes (default): ~80 bits of entropy, collision probability ~1 in 10^24
+/// - 6 bytes: ~48 bits of entropy, collision probability ~1 in 10^14
+/// - 4 bytes: ~32 bits of entropy, collision probability ~1 in 4 billion
+///
+/// Choose an appropriate size based on your uniqueness requirements and expected scale.
+///
+/// # Examples
+///
+/// Generate a standard 14-character ID (equivalent to `short_id()`):
+///
+/// ```
+/// use short_id::short_id_with_bytes;
+///
+/// let id = short_id_with_bytes(10);
+/// assert_eq!(id.len(), 14);
+/// ```
+///
+/// Generate a shorter 8-character ID with less entropy:
+///
+/// ```
+/// use short_id::short_id_with_bytes;
+///
+/// let short_id = short_id_with_bytes(6);
+/// assert_eq!(short_id.len(), 8);
+/// // Suitable for small-scale applications with fewer expected IDs
+/// ```
+///
+/// Generate a longer ID with more entropy:
+///
+/// ```
+/// use short_id::short_id_with_bytes;
+///
+/// let long_id = short_id_with_bytes(16);
+/// assert_eq!(long_id.len(), 22);
+/// // Extra safety margin for high-volume applications
+/// ```
+///
+/// All IDs are URL-safe regardless of size:
+///
+/// ```
+/// use short_id::short_id_with_bytes;
+///
+/// let id = short_id_with_bytes(6);
+/// let url = format!("https://example.com/resource/{}", id);
+/// // No encoding needed - safe to use directly
+/// ```
+pub fn short_id_with_bytes(num_bytes: usize) -> String {
+    generate_random_id(num_bytes)
+}
 
-    URL_SAFE_NO_PAD.encode(bytes)
+/// **Advanced:** Generates a time-ordered, URL-safe short ID with a custom number of bytes.
+///
+/// This is an advanced API that allows you to control the ID length by specifying
+/// the number of bytes to use. The first 8 bytes always contain a microsecond-precision
+/// timestamp, and the remaining bytes are filled with cryptographically secure random data.
+///
+/// **For most users, [`short_id_ordered()`] is the recommended API.**
+///
+/// **This function requires the `std` feature** (enabled by default).
+///
+/// # Parameters
+///
+/// - `num_bytes`: Total number of bytes for the ID (8 to 32 inclusive, must be at least 8 for the timestamp)
+///
+/// # Panics
+///
+/// Panics if `num_bytes` is less than 8 or exceeds 32.
+///
+/// # Security Note
+///
+/// **Using fewer random bytes (beyond the 8-byte timestamp) reduces uniqueness within the same microsecond.**
+/// - 10 bytes (default): 8 bytes timestamp + 2 bytes random (~16 bits randomness per microsecond)
+/// - 8 bytes: timestamp only, no randomness (IDs in the same microsecond will collide!)
+/// - 16 bytes: 8 bytes timestamp + 8 bytes random (~64 bits randomness per microsecond)
+///
+/// # Examples
+///
+/// Generate a standard time-ordered ID (equivalent to `short_id_ordered()`):
+///
+/// ```
+/// use short_id::short_id_ordered_with_bytes;
+///
+/// let id = short_id_ordered_with_bytes(10);
+/// assert_eq!(id.len(), 14);
+/// ```
+///
+/// IDs from different times contain different timestamps:
+///
+/// ```
+/// use short_id::short_id_ordered_with_bytes;
+///
+/// let id1 = short_id_ordered_with_bytes(10);
+/// std::thread::sleep(std::time::Duration::from_millis(10));
+/// let id2 = short_id_ordered_with_bytes(10);
+///
+/// // IDs from different times are different
+/// assert_ne!(id1, id2);
+/// ```
+///
+/// Shorter time-ordered IDs with minimal randomness:
+///
+/// ```
+/// use short_id::short_id_ordered_with_bytes;
+///
+/// let id = short_id_ordered_with_bytes(8);
+/// assert_eq!(id.len(), 11);
+/// // Warning: No random component! Only suitable if you never generate
+/// // multiple IDs within the same microsecond.
+/// ```
+///
+/// Longer time-ordered IDs with extra randomness:
+///
+/// ```
+/// use short_id::short_id_ordered_with_bytes;
+///
+/// let id = short_id_ordered_with_bytes(16);
+/// assert_eq!(id.len(), 22);
+/// // 8 bytes random component provides excellent uniqueness
+/// // even when generating millions of IDs per second
+/// ```
+#[cfg(feature = "std")]
+pub fn short_id_ordered_with_bytes(num_bytes: usize) -> String {
+    generate_ordered_id(num_bytes)
 }
 
 #[cfg(test)]
@@ -350,6 +576,132 @@ mod tests {
             assert!(!id.contains('/'));
             assert!(!id.contains('='));
         }
+    }
+
+    // Tests for short_id_with_bytes
+
+    #[test]
+    fn test_short_id_with_bytes_standard() {
+        let id = short_id_with_bytes(10);
+        assert_eq!(id.len(), 14);
+    }
+
+    #[test]
+    fn test_short_id_with_bytes_shorter() {
+        let id = short_id_with_bytes(6);
+        assert_eq!(id.len(), 8);
+    }
+
+    #[test]
+    fn test_short_id_with_bytes_longer() {
+        let id = short_id_with_bytes(16);
+        assert_eq!(id.len(), 22);
+    }
+
+    #[test]
+    fn test_short_id_with_bytes_url_safe() {
+        for num_bytes in [6, 10, 16, 32] {
+            let id = short_id_with_bytes(num_bytes);
+            assert!(!id.contains('+'));
+            assert!(!id.contains('/'));
+            assert!(!id.contains('='));
+        }
+    }
+
+    #[test]
+    fn test_short_id_with_bytes_unique() {
+        // Generate many IDs with different byte counts
+        for num_bytes in [6, 10, 16] {
+            let id1 = short_id_with_bytes(num_bytes);
+            let id2 = short_id_with_bytes(num_bytes);
+            assert_ne!(id1, id2);
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "num_bytes must be greater than 0")]
+    fn test_short_id_with_bytes_zero_panics() {
+        short_id_with_bytes(0);
+    }
+
+    #[test]
+    #[should_panic(expected = "num_bytes must not exceed 32")]
+    fn test_short_id_with_bytes_too_large_panics() {
+        short_id_with_bytes(33);
+    }
+
+    // Tests for short_id_ordered_with_bytes
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn test_short_id_ordered_with_bytes_standard() {
+        let id = short_id_ordered_with_bytes(10);
+        assert_eq!(id.len(), 14);
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn test_short_id_ordered_with_bytes_minimal() {
+        let id = short_id_ordered_with_bytes(8);
+        assert_eq!(id.len(), 11);
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn test_short_id_ordered_with_bytes_longer() {
+        let id = short_id_ordered_with_bytes(16);
+        assert_eq!(id.len(), 22);
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn test_short_id_ordered_with_bytes_url_safe() {
+        for num_bytes in [8, 10, 16, 32] {
+            let id = short_id_ordered_with_bytes(num_bytes);
+            assert!(!id.contains('+'));
+            assert!(!id.contains('/'));
+            assert!(!id.contains('='));
+        }
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn test_short_id_ordered_with_bytes_includes_timestamp() {
+        // Generate IDs with different byte sizes and verify they contain timestamp information
+        // by checking that IDs generated at different times are different
+        for num_bytes in [8, 10, 16] {
+            let id1 = short_id_ordered_with_bytes(num_bytes);
+            std::thread::sleep(std::time::Duration::from_secs(1));
+            let id2 = short_id_ordered_with_bytes(num_bytes);
+
+            // IDs from different times should differ
+            assert_ne!(id1, id2, "IDs from different times should be different");
+        }
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn test_short_id_ordered_with_bytes_unique() {
+        // Even with same timestamp, random component makes them unique
+        for num_bytes in [10, 16] {
+            let id1 = short_id_ordered_with_bytes(num_bytes);
+            let id2 = short_id_ordered_with_bytes(num_bytes);
+            assert_ne!(id1, id2);
+        }
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    #[should_panic(expected = "num_bytes must be at least 8 for ordered IDs")]
+    fn test_short_id_ordered_with_bytes_too_small_panics() {
+        short_id_ordered_with_bytes(7);
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    #[should_panic(expected = "num_bytes must not exceed 32")]
+    fn test_short_id_ordered_with_bytes_too_large_panics() {
+        short_id_ordered_with_bytes(33);
     }
 }
 

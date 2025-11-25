@@ -66,12 +66,14 @@ For IDs that roughly sort by creation time:
 use short_id::short_id_ordered;
 
 let id1 = short_id_ordered();
-std::thread::sleep(std::time::Duration::from_secs(1));
+std::thread::sleep(std::time::Duration::from_micros(2));
 let id2 = short_id_ordered();
 
-// IDs sort chronologically
+// IDs sort chronologically (microsecond precision)
 assert!(id1 < id2);
 ```
+
+**Note:** The timestamp has **microsecond precision**, so IDs generated just a few microseconds apart will have different timestamps and sort correctly. IDs generated within the same microsecond will still be unique due to the random component.
 
 This is useful for:
 - Log entries that should sort by time
@@ -100,11 +102,42 @@ let s: String = id.into();
 let id: ShortId = s.into();
 ```
 
+## Advanced: Custom Length IDs
+
+For advanced use cases, you can control the ID length by specifying the number of random bytes:
+
+```rust
+use short_id::{short_id_with_bytes, short_id_ordered_with_bytes};
+
+// Generate a shorter 8-character ID (6 bytes)
+let short = short_id_with_bytes(6);
+assert_eq!(short.len(), 8);
+
+// Generate a longer 22-character ID (16 bytes)
+let long = short_id_with_bytes(16);
+assert_eq!(long.len(), 22);
+
+// Time-ordered IDs also support custom lengths
+let ordered = short_id_ordered_with_bytes(12);
+```
+
+**When to use custom lengths:**
+
+- **Fewer bytes (e.g., 4-6)**: Use for low-volume applications where you need very short IDs and collision risk is acceptable. Keep in mind that 6 bytes provides only ~48 bits of entropy (~1 in 10^14 collision probability).
+
+- **Default (10 bytes)**: Recommended for most applications. Provides ~80 bits of entropy with 14-character IDs. The `short_id()` and `short_id_ordered()` functions use this (~1 in 10^24 collision probability).
+
+- **More bytes (e.g., 16-32)**: Use for high-volume applications or when you need extra safety margin. 16 bytes provides ~128 bits of entropy.
+
+**Important:** Using fewer bytes significantly increases collision probability. For most users, the default `short_id()` and `short_id_ordered()` functions are recommended.
+
 ## API Reference
 
 **Functions:**
-- `short_id() -> String` - Generate a random ID
-- `short_id_ordered() -> String` - Generate a time-ordered ID (requires `std`)
+- `short_id() -> String` - Generate a random 14-character ID (recommended)
+- `short_id_ordered() -> String` - Generate a time-ordered 14-character ID (requires `std`)
+- `short_id_with_bytes(num_bytes: usize) -> String` - Advanced: custom length random ID
+- `short_id_ordered_with_bytes(num_bytes: usize) -> String` - Advanced: custom length time-ordered ID (requires `std`)
 
 **Macros:**
 - `id!()` - Shorthand for `short_id()`
@@ -118,11 +151,12 @@ let id: ShortId = s.into();
   - `into_string(self) -> String`
   - Implements: `Display`, `AsRef<str>`, `From<String>`, `From<ShortId> for String`
 
-All IDs are:
+Default IDs are:
 - Exactly 14 characters
 - URL-safe: `A-Z`, `a-z`, `0-9`, `-`, `_`
 - Cryptographically secure (using `OsRng`)
 - Base64url encoded (no padding)
+- ~80 bits of entropy (10 random bytes)
 
 ## `no_std` Support
 
