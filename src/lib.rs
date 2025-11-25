@@ -248,7 +248,11 @@ pub fn short_id() -> String {
 /// Panics if `num_bytes` is less than 8, is 0, or exceeds `MAX_BYTES`.
 #[cfg(feature = "std")]
 fn generate_ordered_id(num_bytes: usize) -> String {
-    assert!(num_bytes >= 8, "num_bytes must be at least 8 for ordered IDs (got {})", num_bytes);
+    assert!(
+        num_bytes >= 8,
+        "num_bytes must be at least 8 for ordered IDs (got {})",
+        num_bytes
+    );
     assert!(
         num_bytes <= MAX_BYTES,
         "num_bytes must not exceed {} (got {})",
