@@ -196,7 +196,10 @@ fn test_short_id_ordered_newtype_sorts_by_creation_time() {
     let id1 = ShortId::ordered();
     std::thread::sleep(std::time::Duration::from_millis(2));
     let id2 = ShortId::ordered();
-    assert!(id1 < id2, "earlier ShortId::ordered() should sort before later one");
+    assert!(
+        id1 < id2,
+        "earlier ShortId::ordered() should sort before later one"
+    );
 }
 
 // Boundary values for short_id_with_bytes
@@ -222,10 +225,7 @@ fn test_short_id_try_from_str_valid() {
 
 #[test]
 fn test_short_id_try_from_str_invalid() {
-    assert_eq!(
-        ShortId::try_from("bad"),
-        Err(ShortIdError::InvalidString)
-    );
+    assert_eq!(ShortId::try_from("bad"), Err(ShortIdError::InvalidString));
 }
 
 // ShortIdError Display
@@ -236,7 +236,11 @@ fn test_short_id_error_display() {
         "num_bytes must be greater than 0"
     );
     assert_eq!(
-        ShortIdError::TooManyBytes { requested: 33, max: 32 }.to_string(),
+        ShortIdError::TooManyBytes {
+            requested: 33,
+            max: 32
+        }
+        .to_string(),
         "num_bytes must not exceed 32 (got 33)"
     );
     assert_eq!(
