@@ -822,10 +822,38 @@ impl TryFrom<String> for ShortId {
     type Error = ShortIdError;
 
     fn try_from(s: String) -> Result<Self, Self::Error> {
+        ShortId::try_from(s.as_str()).map(|_| ShortId(s))
+    }
+}
+
+/// Attempts to wrap a `&str` as a [`ShortId`], allocating only on success.
+///
+/// Validates that the string is exactly 14 characters long and contains only
+/// URL-safe base64 characters (`A-Z`, `a-z`, `0-9`, `-`, `_`).
+///
+/// # Errors
+///
+/// Returns [`ShortIdError::InvalidString`] if validation fails.
+///
+/// # Examples
+///
+/// ```
+/// use short_id::{ShortId, ShortIdError};
+///
+/// let id = ShortId::random();
+/// let recovered = ShortId::try_from(id.as_str()).unwrap();
+/// assert_eq!(id, recovered);
+///
+/// assert_eq!(ShortId::try_from("bad"), Err(ShortIdError::InvalidString));
+/// ```
+impl TryFrom<&str> for ShortId {
+    type Error = ShortIdError;
+
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
         if s.len() != 14 || !s.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
             return Err(ShortIdError::InvalidString);
         }
-        Ok(ShortId(s))
+        Ok(ShortId(s.to_owned()))
     }
 }
 
@@ -861,6 +889,19 @@ mod shortid_tests {
     }
 
     #[test]
+    fn test_shortid_try_from_str_valid() {
+        let id = ShortId::random();
+        let recovered = ShortId::try_from(id.as_str()).unwrap();
+        assert_eq!(id, recovered);
+    }
+
+    #[test]
+    fn test_shortid_try_from_str_invalid() {
+        assert_eq!(ShortId::try_from("bad"), Err(ShortIdError::InvalidString));
+        assert_eq!(ShortId::try_from("invalid chars!"), Err(ShortIdError::InvalidString));
+    }
+
+    #[test]
     fn test_shortid_try_from_wrong_length() {
         assert_eq!(
             ShortId::try_from("short".to_string()),
@@ -874,9 +915,9 @@ mod shortid_tests {
 
     #[test]
     fn test_shortid_try_from_invalid_chars() {
-        // 14 chars but contains invalid characters
+        // Exactly 14 chars but contains characters outside the URL-safe base64 alphabet
         assert_eq!(
-            ShortId::try_from("invalid!chars!!".to_string()),
+            ShortId::try_from("invalid chars!".to_string()),
             Err(ShortIdError::InvalidString)
         );
     }
