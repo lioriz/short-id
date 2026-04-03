@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0]
+
+### Added
+- `ShortIdError` enum for error handling in the advanced API, implemented via `thiserror`
+- `TryFrom<String> for ShortId` — validates that the string is exactly 14 characters and
+  contains only URL-safe base64 characters (`A-Z`, `a-z`, `0-9`, `-`, `_`)
+- `TryFrom<&str> for ShortId` — same validation without requiring an upfront allocation
+
+### Changed
+- **BREAKING**: `short_id_with_bytes(n)` now returns `Result<String, ShortIdError>` instead
+  of panicking on invalid input (`ZeroBytes` or `TooManyBytes` errors)
+- **BREAKING**: `short_id_ordered_with_bytes(n)` now returns `Result<String, ShortIdError>`
+  instead of panicking (`TooFewBytesForOrdered` or `TooManyBytes` errors)
+- **BREAKING**: Removed `From<String> for ShortId` — it accepted any string, breaking the
+  documented 14-character URL-safe invariant; use `TryFrom` instead
+- **BREAKING**: Removed `ShortId::into_string()` — use `.into()` via `From<ShortId> for String`
+- `thiserror` dependency added (`default-features = false`) with `std` feature propagated
+  through the crate's own `std` feature to preserve `no_std` compatibility
+- Documented that `Ord`/`PartialOrd` on `ShortId` is only meaningful for IDs from
+  `ShortId::ordered()`; ordering of random IDs is arbitrary
+- Documented the `u128 → u64` timestamp cast in `generate_ordered_id`
+
+### Fixed
+- `no_std` build was broken by `thiserror = "2"` with default features; fixed by propagating
+  the `std` feature flag correctly
+- `test_shortid_try_from_invalid_chars` was testing a 15-character string, so it was rejected
+  by the length check before reaching character validation; fixed with an exact 14-char string
+
 ## [0.4.1]
 
 ### Changed
@@ -104,7 +132,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MIT License
 - Professional README with usage examples
 
-[Unreleased]: https://github.com/lioriz/short-id/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/lioriz/short-id/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/lioriz/short-id/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/lioriz/short-id/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/lioriz/short-id/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/lioriz/short-id/compare/v0.2.3...v0.3.0
