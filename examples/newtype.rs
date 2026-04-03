@@ -16,15 +16,16 @@ fn main() {
     // Use AsRef<str>
     print_id(&id2);
 
-    // Convert to String
-    let string: String = id1.clone().into_string();
+    // Convert to String via From<ShortId> for String
+    let string: String = id1.clone().into();
     println!("Into String: {}", string);
 
-    // Create from String
-    let id3: ShortId = string.into();
-    println!("From String: {}", id3);
+    // Round-trip: convert back to ShortId via TryFrom<String>
+    let id3 = ShortId::try_from(string).expect("valid short id string");
+    println!("TryFrom String: {}", id3);
 
     // Compare IDs (PartialEq, Ord)
+    // Note: ordering is meaningful only for IDs from ShortId::ordered()
     let id4 = ShortId::random();
     let id5 = ShortId::random();
     println!("\nIDs are equal: {}", id4 == id5);
