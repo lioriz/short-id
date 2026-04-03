@@ -417,7 +417,10 @@ pub fn short_id_with_bytes(num_bytes: usize) -> Result<String, ShortIdError> {
         return Err(ShortIdError::ZeroBytes);
     }
     if num_bytes > MAX_BYTES {
-        return Err(ShortIdError::TooManyBytes { requested: num_bytes, max: MAX_BYTES });
+        return Err(ShortIdError::TooManyBytes {
+            requested: num_bytes,
+            max: MAX_BYTES,
+        });
     }
     Ok(generate_random_id(num_bytes))
 }
@@ -496,10 +499,15 @@ pub fn short_id_with_bytes(num_bytes: usize) -> Result<String, ShortIdError> {
 #[cfg(feature = "std")]
 pub fn short_id_ordered_with_bytes(num_bytes: usize) -> Result<String, ShortIdError> {
     if num_bytes < 8 {
-        return Err(ShortIdError::TooFewBytesForOrdered { requested: num_bytes });
+        return Err(ShortIdError::TooFewBytesForOrdered {
+            requested: num_bytes,
+        });
     }
     if num_bytes > MAX_BYTES {
-        return Err(ShortIdError::TooManyBytes { requested: num_bytes, max: MAX_BYTES });
+        return Err(ShortIdError::TooManyBytes {
+            requested: num_bytes,
+            max: MAX_BYTES,
+        });
     }
     Ok(generate_ordered_id(num_bytes))
 }
@@ -627,7 +635,10 @@ mod tests {
     fn test_short_id_with_bytes_too_large_errors() {
         assert_eq!(
             short_id_with_bytes(33),
-            Err(ShortIdError::TooManyBytes { requested: 33, max: MAX_BYTES })
+            Err(ShortIdError::TooManyBytes {
+                requested: 33,
+                max: MAX_BYTES
+            })
         );
     }
 
@@ -689,7 +700,10 @@ mod tests {
     fn test_short_id_ordered_with_bytes_too_large_errors() {
         assert_eq!(
             short_id_ordered_with_bytes(33),
-            Err(ShortIdError::TooManyBytes { requested: 33, max: MAX_BYTES })
+            Err(ShortIdError::TooManyBytes {
+                requested: 33,
+                max: MAX_BYTES
+            })
         );
     }
 }
@@ -815,7 +829,7 @@ impl From<ShortId> for String {
 /// assert_eq!(id, recovered);
 ///
 /// // An invalid string is rejected
-/// let result = ShortId::try_from("not-valid!!".to_string());
+/// let result = ShortId::try_from(String::from("not-valid!!"));
 /// assert_eq!(result, Err(ShortIdError::InvalidString));
 /// ```
 impl TryFrom<String> for ShortId {
@@ -850,10 +864,14 @@ impl TryFrom<&str> for ShortId {
     type Error = ShortIdError;
 
     fn try_from(s: &str) -> Result<Self, Self::Error> {
-        if s.len() != 14 || !s.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
+        if s.len() != 14
+            || !s
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+        {
             return Err(ShortIdError::InvalidString);
         }
-        Ok(ShortId(s.to_owned()))
+        Ok(ShortId(String::from(s)))
     }
 }
 
@@ -898,17 +916,20 @@ mod shortid_tests {
     #[test]
     fn test_shortid_try_from_str_invalid() {
         assert_eq!(ShortId::try_from("bad"), Err(ShortIdError::InvalidString));
-        assert_eq!(ShortId::try_from("invalid chars!"), Err(ShortIdError::InvalidString));
+        assert_eq!(
+            ShortId::try_from("invalid chars!"),
+            Err(ShortIdError::InvalidString)
+        );
     }
 
     #[test]
     fn test_shortid_try_from_wrong_length() {
         assert_eq!(
-            ShortId::try_from("short".to_string()),
+            ShortId::try_from(String::from("short")),
             Err(ShortIdError::InvalidString)
         );
         assert_eq!(
-            ShortId::try_from("this_is_way_too_long_to_be_valid".to_string()),
+            ShortId::try_from(String::from("this_is_way_too_long_to_be_valid")),
             Err(ShortIdError::InvalidString)
         );
     }
@@ -917,7 +938,7 @@ mod shortid_tests {
     fn test_shortid_try_from_invalid_chars() {
         // Exactly 14 chars but contains characters outside the URL-safe base64 alphabet
         assert_eq!(
-            ShortId::try_from("invalid chars!".to_string()),
+            ShortId::try_from(String::from("invalid chars!")),
             Err(ShortIdError::InvalidString)
         );
     }
