@@ -20,6 +20,7 @@ exclude = [
 [dependencies]
 rand = { version = "0.8", default-features = false, features = ["getrandom"] }
 base64 = { version = "0.22", default-features = false, features = ["alloc"] }
+thiserror = "2"
 
 [features]
 default = ["std"]

@@ -115,6 +115,7 @@ use std::vec;
 
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use rand::{rngs::OsRng, RngCore};
+use thiserror::Error;
 
 /// Maximum number of random bytes allowed for custom-length ID generation.
 ///
@@ -122,40 +123,22 @@ use rand::{rngs::OsRng, RngCore};
 const MAX_BYTES: usize = 32;
 
 /// Errors returned by the custom-length ID generation functions.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum ShortIdError {
     /// `num_bytes` was 0.
+    #[error("num_bytes must be greater than 0")]
     ZeroBytes,
     /// `num_bytes` exceeded [`MAX_BYTES`].
+    #[error("num_bytes must not exceed {max} (got {requested})")]
     TooManyBytes { requested: usize, max: usize },
     /// `num_bytes` was less than 8, which is required for the timestamp prefix in ordered IDs.
+    #[error("num_bytes must be at least 8 for ordered IDs (got {requested})")]
     TooFewBytesForOrdered { requested: usize },
     /// The string is not a valid `ShortId` (wrong length or characters outside the URL-safe
     /// base64 alphabet).
+    #[error("string is not a valid ShortId (wrong length or invalid characters)")]
     InvalidString,
 }
-
-impl core::fmt::Display for ShortIdError {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match self {
-            ShortIdError::ZeroBytes => write!(f, "num_bytes must be greater than 0"),
-            ShortIdError::TooManyBytes { requested, max } => {
-                write!(f, "num_bytes must not exceed {} (got {})", max, requested)
-            }
-            ShortIdError::TooFewBytesForOrdered { requested } => write!(
-                f,
-                "num_bytes must be at least 8 for ordered IDs (got {})",
-                requested
-            ),
-            ShortIdError::InvalidString => {
-                write!(f, "string is not a valid ShortId (wrong length or invalid characters)")
-            }
-        }
-    }
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for ShortIdError {}
 
 /// Convenience macro for generating a random short ID.
 ///
