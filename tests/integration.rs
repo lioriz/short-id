@@ -1,4 +1,4 @@
-use short_id::{id, short_id, ShortId};
+use short_id::{id, short_id, ShortId, ShortIdError};
 #[cfg(feature = "std")]
 use short_id::{ordered_id, short_id_ordered};
 
@@ -149,10 +149,19 @@ fn test_short_id_as_ref() {
 }
 
 #[test]
-fn test_short_id_from_string() {
-    let s = String::from("test_id_123456");
-    let id: ShortId = s.clone().into();
-    assert_eq!(id.as_str(), "test_id_123456");
+fn test_short_id_try_from_valid_string() {
+    let id = ShortId::random();
+    let s: String = id.clone().into();
+    let recovered = ShortId::try_from(s).expect("valid short id should round-trip");
+    assert_eq!(id, recovered);
+}
+
+#[test]
+fn test_short_id_try_from_invalid_string() {
+    assert_eq!(
+        ShortId::try_from("bad".to_string()),
+        Err(ShortIdError::InvalidString)
+    );
 }
 
 #[test]
